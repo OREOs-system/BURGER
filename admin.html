@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BurgerStack — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #08090e;
+    --surface: #111318;
+    --surface2: #1a1d24;
+    --border: #232630;
+    --red: #e83d3d;
+    --amber: #f5a623;
+    --green: #3dcc8a;
+    --blue: #4f8cff;
+    --text: #e8eaf0;
+    --text-muted: #6a7080;
+    --text-dim: #3a3f50;
+    --radius: 14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; }
+
+  /* PAGES */
+  .page { display:none; min-height:100vh; }
+  .page.active { display:flex; flex-direction:column; }
+
+  /* ── ADMIN LOGIN ── */
+  #admin-login { align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 50% 40%, rgba(79,140,255,0.08) 0%, transparent 60%); }
+  .login-wrap { width:100%; max-width:400px; padding:24px; }
+  .brand { text-align:center; margin-bottom:32px; }
+  .brand h1 { font-family:'Bebas Neue',sans-serif; font-size:48px; letter-spacing:4px; color:var(--blue); }
+  .brand-sub { color:var(--text-muted); font-size:11px; letter-spacing:3px; text-transform:uppercase; margin-top:4px; }
+  .admin-badge { display:inline-block; background:rgba(79,140,255,0.15); color:var(--blue); border:1px solid rgba(79,140,255,0.3); border-radius:20px; padding:4px 14px; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-top:8px; font-family:'Space Mono',monospace; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:36px; box-shadow:0 40px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04); }
+  .form-group { margin-bottom:18px; }
+  label { display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:7px; }
+  input { width:100%; padding:13px 15px; background:var(--surface2); border:1px solid var(--border); border-radius:9px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; outline:none; transition:.2s; }
+  input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(79,140,255,0.12); }
+  .btn { width:100%; padding:14px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; border:none; transition:.15s; letter-spacing:.5px; }
+  .btn-blue { background:var(--blue); color:#fff; }
+  .btn-blue:hover { background:#6fa3ff; transform:translateY(-1px); box-shadow:0 8px 24px rgba(79,140,255,0.3); }
+  .msg { text-align:center; font-size:13px; margin-top:12px; padding:10px; border-radius:8px; display:none; }
+  .msg.error { background:rgba(232,61,61,.15); color:#ff7070; border:1px solid rgba(232,61,61,.3); display:block; }
+
+  /* ── ADMIN PANEL NAV ── */
+  nav {
+    position:sticky; top:0; z-index:100;
+    background:rgba(8,9,14,0.95); backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    padding:0 32px; display:flex; align-items:center; justify-content:space-between; height:64px;
+  }
+  .nav-brand { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--blue); letter-spacing:3px; }
+  .nav-right { display:flex; align-items:center; gap:12px; }
+  .admin-pill { background:rgba(79,140,255,0.15); color:var(--blue); border:1px solid rgba(79,140,255,0.3); border-radius:20px; padding:5px 14px; font-size:11px; font-weight:700; letter-spacing:1px; font-family:'Space Mono',monospace; }
+  .logout-btn { background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:13px; transition:.2s; }
+  .logout-btn:hover { border-color:var(--red); color:var(--red); }
+  .refresh-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text-muted); padding:8px 14px; border-radius:8px; cursor:pointer; font-size:13px; transition:.2s; }
+  .refresh-btn:hover { color:var(--text); }
+
+  /* ── PANEL CONTENT ── */
+  .panel-content { flex:1; padding:32px; max-width:1100px; margin:0 auto; width:100%; }
+  .panel-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; }
+  .panel-title { font-family:'Bebas Neue',sans-serif; font-size:40px; color:var(--blue); letter-spacing:3px; }
+  .panel-sub { color:var(--text-muted); font-size:13px; margin-top:4px; }
+  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px; }
+  .stat-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; font-family:'Space Mono',monospace; }
+  .stat-num { font-family:'Bebas Neue',sans-serif; font-size:36px; letter-spacing:2px; margin-top:4px; }
+  .stat-num.amber { color:var(--amber); }
+  .stat-num.blue { color:var(--blue); }
+  .stat-num.green { color:var(--green); }
+  .stat-num.red { color:var(--red); }
+
+  /* ── FILTER TABS ── */
+  .filter-tabs { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
+  .filter-tab { padding:8px 18px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--text-muted); transition:.2s; }
+  .filter-tab:hover { color:var(--text); border-color:var(--text-dim); }
+  .filter-tab.active { background:var(--surface2); color:var(--text); border-color:var(--text-dim); }
+  .filter-tab.f-pending.active { background:rgba(245,166,35,.15); color:var(--amber); border-color:rgba(245,166,35,.3); }
+  .filter-tab.f-prepare.active { background:rgba(79,140,255,.15); color:var(--blue); border-color:rgba(79,140,255,.3); }
+  .filter-tab.f-ready.active { background:rgba(61,204,138,.15); color:var(--green); border-color:rgba(61,204,138,.3); }
+  .filter-tab.f-cancel.active { background:rgba(232,61,61,.15); color:var(--red); border-color:rgba(232,61,61,.3); }
+
+  /* ── ORDER CARDS ── */
+  .orders-list { display:flex; flex-direction:column; gap:14px; }
+  .order-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:22px; transition:.15s;
+  }
+  .order-card:hover { border-color:var(--border); box-shadow:0 8px 32px rgba(0,0,0,.3); }
+  .order-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+  .order-id { font-family:'Space Mono',monospace; font-size:11px; color:var(--text-dim); margin-bottom:4px; }
+  .order-user { font-size:16px; font-weight:700; color:var(--text); }
+  .order-detail { font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .order-right { text-align:right; }
+
+  .info-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-bottom:16px; }
+  .info-cell { background:var(--surface2); border-radius:10px; padding:10px 12px; }
+  .info-cell-label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; font-family:'Space Mono',monospace; margin-bottom:4px; }
+  .info-cell-val { font-size:13px; color:var(--text); font-weight:500; }
+
+  .order-items-list { background:var(--surface2); border-radius:10px; padding:12px 14px; margin-bottom:16px; border:1px solid var(--border); }
+  .order-items-list div { font-size:13px; color:var(--text-muted); padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .order-items-list div:last-child { border-bottom:none; }
+  .order-items-list .item-total { color:var(--amber); font-family:'Space Mono',monospace; float:right; font-size:12px; }
+
+  .order-footer { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  .order-total { font-family:'Space Mono',monospace; font-size:18px; color:var(--amber); font-weight:700; }
+  .order-actions { display:flex; gap:8px; }
+  .act-btn { padding:9px 20px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:none; transition:.15s; }
+  .act-btn:hover { transform:translateY(-1px); }
+  .act-accept { background:rgba(61,204,138,.15); color:var(--green); border:1px solid rgba(61,204,138,.3); }
+  .act-accept:hover { background:var(--green); color:#0e0b08; }
+  .act-done { background:rgba(61,204,138,.15); color:var(--green); border:1px solid rgba(61,204,138,.3); }
+  .act-done:hover { background:var(--green); color:#0e0b08; }
+  .act-refuse { background:rgba(232,61,61,.15); color:#ff7070; border:1px solid rgba(232,61,61,.3); }
+  .act-refuse:hover { background:var(--red); color:#fff; }
+
+  .status-badge { padding:5px 12px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; font-family:'Space Mono',monospace; }
+  .status-Pending { background:rgba(245,166,35,.15); color:var(--amber); border:1px solid rgba(245,166,35,.3); }
+  .status-To-Prepare { background:rgba(79,140,255,.15); color:var(--blue); border:1px solid rgba(79,140,255,.3); }
+  .status-Ready-to-Claim { background:rgba(61,204,138,.15); color:var(--green); border:1px solid rgba(61,204,138,.3); }
+  .status-Cancelled { background:rgba(232,61,61,.15); color:#ff7070; border:1px solid rgba(232,61,61,.3); }
+
+  .loader { text-align:center; padding:60px; color:var(--text-muted); }
+  .spinner { width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  #toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 20px; font-size:14px; z-index:500; box-shadow:0 20px 60px rgba(0,0,0,.5); transition:transform .3s cubic-bezier(.34,1.56,.64,1); white-space:nowrap; }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+  #toast.t-success { border-color:var(--green); color:var(--green); }
+  #toast.t-error { border-color:var(--red); color:#ff7070; }
+  #toast.t-info { border-color:var(--blue); color:var(--blue); }
+
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- ADMIN LOGIN -->
+<div id="admin-login" class="page active">
+  <div class="login-wrap">
+    <div class="brand">
+      <h1>⚙️ BurgerStack</h1>
+      <div class="brand-sub">Management System</div>
+      <div class="admin-badge">Admin Portal</div>
+    </div>
+    <div class="card">
+      <div class="form-group">
+        <label>Admin Username</label>
+        <input id="a-user" type="text" placeholder="admin" autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="a-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doAdminLogin()"/>
+      </div>
+      <button class="btn btn-blue" onclick="doAdminLogin()">Log In to Admin Panel</button>
+      <div id="admin-msg" class="msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel" class="page">
+  <nav>
+    <span class="nav-brand">⚙️ BurgerStack Admin</span>
+    <div class="nav-right">
+      <span class="admin-pill">Administrator</span>
+      <button class="refresh-btn" onclick="loadOrders()">⟳ Refresh</button>
+      <button class="logout-btn" onclick="adminLogout()">↩ Logout</button>
+    </div>
+  </nav>
+
+  <div class="panel-content">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Order Management</div>
+        <div class="panel-sub">Review, accept, or refuse customer orders in real-time</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-num blue" id="stat-total">—</div></div>
+      <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-num amber" id="stat-pending">—</div></div>
+      <div class="stat-card"><div class="stat-label">Preparing</div><div class="stat-num blue" id="stat-prepare">—</div></div>
+      <div class="stat-card"><div class="stat-label">Ready / Done</div><div class="stat-num green" id="stat-ready">—</div></div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterOrders('all',this)">All Orders</button>
+      <button class="filter-tab f-pending" onclick="filterOrders('Pending',this)">⏳ Pending</button>
+      <button class="filter-tab f-prepare" onclick="filterOrders('To Prepare',this)">👨‍🍳 To Prepare</button>
+      <button class="filter-tab f-ready" onclick="filterOrders('Ready to Claim',this)">✅ Ready to Claim</button>
+      <button class="filter-tab f-cancel" onclick="filterOrders('Cancelled',this)">✕ Cancelled</button>
+    </div>
+
+    <div id="orders-content"><div class="loader"><div class="spinner"></div>Loading orders...</div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let allOrders = [];
+let currentFilter = 'all';
+
+async function doAdminLogin() {
+  const username = document.getElementById('a-user').value.trim();
+  const password = document.getElementById('a-pass').value;
+  const res = await api('/api/admin/login', 'POST', { username, password });
+  if (res.success) {
+    showPage('admin-panel');
+    loadOrders();
+  } else {
+    const msg = document.getElementById('admin-msg');
+    msg.className = 'msg error';
+    msg.textContent = res.message || 'Invalid credentials';
+  }
+}
+
+async function adminLogout() {
+  await api('/api/admin/logout', 'POST');
+  showPage('admin-login');
+}
+
+async function loadOrders() {
+  const res = await api('/api/admin/orders');
+  if (!res.success) {
+    document.getElementById('orders-content').innerHTML = '<div class="loader">Failed to load orders. Please refresh.</div>';
+    return;
+  }
+  allOrders = res.orders;
+  updateStats();
+  renderOrders();
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allOrders.length;
+  document.getElementById('stat-pending').textContent = allOrders.filter(o=>o.status==='Pending').length;
+  document.getElementById('stat-prepare').textContent = allOrders.filter(o=>o.status==='To Prepare').length;
+  document.getElementById('stat-ready').textContent = allOrders.filter(o=>o.status==='Ready to Claim').length;
+}
+
+function filterOrders(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderOrders();
+}
+
+function renderOrders() {
+  const filtered = currentFilter === 'all' ? allOrders : allOrders.filter(o=>o.status===currentFilter);
+  if (!filtered.length) {
+    document.getElementById('orders-content').innerHTML = '<div class="loader">No orders found for this filter.</div>';
+    return;
+  }
+  document.getElementById('orders-content').innerHTML = `<div class="orders-list">${filtered.map(o=>orderCard(o)).join('')}</div>`;
+}
+
+function orderCard(o) {
+  const status = o.status.replace(/ /g,'-');
+  const dt = new Date(o.created_at).toLocaleString('en-PH');
+  const itemsHtml = o.items.map(i=>`<div>${i.item_name} × ${i.quantity}<span class="item-total">₱${(i.item_price*i.quantity).toFixed(2)}</span></div>`).join('');
+
+  let actions = '';
+  if (o.status === 'Pending') {
+    actions = `<button class="act-btn act-accept" onclick="updateStatus(${o.id},'To Prepare')">✓ Accept</button>
+               <button class="act-btn act-refuse" onclick="updateStatus(${o.id},'Cancelled')">✕ Refuse</button>`;
+  } else if (o.status === 'To Prepare') {
+    actions = `<button class="act-btn act-done" onclick="updateStatus(${o.id},'Ready to Claim')">✓ Mark Done</button>
+               <button class="act-btn act-refuse" onclick="updateStatus(${o.id},'Cancelled')">✕ Cancel</button>`;
+  }
+
+  return `<div class="order-card" id="order-${o.id}">
+    <div class="order-top">
+      <div>
+        <div class="order-id">ORDER #${String(o.id).padStart(4,'0')}</div>
+        <div class="order-user">${o.first_name} ${o.last_name}</div>
+        <div class="order-detail">@${o.username}</div>
+      </div>
+      <div class="order-right">
+        <span class="status-badge status-${status}">${o.status}</span>
+        <div class="order-detail" style="margin-top:6px">${dt}</div>
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-cell"><div class="info-cell-label">📧 Email</div><div class="info-cell-val">${o.email}</div></div>
+      <div class="info-cell"><div class="info-cell-label">📞 Contact</div><div class="info-cell-val">${o.contact_number}</div></div>
+      <div class="info-cell" style="grid-column:span 2"><div class="info-cell-label">📍 Address</div><div class="info-cell-val">${o.address}</div></div>
+    </div>
+    <div class="order-items-list">${itemsHtml}</div>
+    <div class="order-footer">
+      <div class="order-total">Total: ₱${parseFloat(o.total_amount).toFixed(2)}</div>
+      <div class="order-actions">${actions}</div>
+    </div>
+  </div>`;
+}
+
+async function updateStatus(orderId, newStatus) {
+  const res = await api(`/api/admin/orders/${orderId}`, 'PUT', { status: newStatus });
+  if (res.success) {
+    showToast(`Order #${String(orderId).padStart(4,'0')} → ${newStatus}`, 'success');
+    loadOrders();
+  } else {
+    showToast('Update failed', 'error');
+  }
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+async function api(url, method='GET', body=null) {
+  try {
+    const opts = { method, headers:{'Content-Type':'application/json'} };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(url, opts);
+    return await r.json();
+  } catch { return { success:false, message:'Network error' }; }
+}
+
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 't-'+type+' show';
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// Check if already logged in
+window.addEventListener('load', async () => {
+  const res = await api('/api/admin/orders');
+  if (res.success) { showPage('admin-panel'); allOrders = res.orders; updateStats(); renderOrders(); }
+});
+</script>
+</body>
+</html>
